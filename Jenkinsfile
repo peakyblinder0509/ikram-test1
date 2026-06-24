@@ -1,4 +1,3 @@
-
 pipeline {
     agent any
 
@@ -16,21 +15,21 @@ pipeline {
 
         stage('Terraform Init') {
             steps {
-                withCredentials([aws(credentialsId: 'terraform-crd', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'terraform-crd'
+                ]]) {
                     sh 'terraform init'
                 }
             }
         }
 
-        stage('Terraform Validate') {
-            steps {
-                sh 'terraform validate'
-            }
-        }
-
         stage('Terraform Plan') {
             steps {
-                withCredentials([aws(credentialsId: 'terraform-crd', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'terraform-crd'
+                ]]) {
                     sh 'terraform plan -out=tfplan'
                 }
             }
@@ -38,7 +37,10 @@ pipeline {
 
         stage('Terraform Apply') {
             steps {
-                withCredentials([aws(credentialsId: 'terraform-crd', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'terraform-crd'
+                ]]) {
                     sh 'terraform apply -auto-approve tfplan'
                 }
             }
@@ -47,11 +49,10 @@ pipeline {
 
     post {
         success {
-            echo 'Terraform deployment successful'
+            echo 'Terraform apply successful!'
         }
-
         failure {
-            echo 'Terraform deployment failed'
+            echo 'Terraform pipeline failed. Check logs above.'
         }
     }
 }
